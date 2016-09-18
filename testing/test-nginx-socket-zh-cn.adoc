@@ -531,7 +531,165 @@ X-Resty-DBD-Module: ngx_drizzle \d+\.\d+\.\d+
 Content-Type: application/x-resty-dbd-stream
 ```
 这会检查响应的 `Content-Type` 是 `application/x-resty-dbd-stream` 且 `X-Resty-DBD-Module` 匹配 `ngx_drizzle \d+\.\d+\.\d+`  
+这个测试只有在所有的 headers 在响应中被找到且这个值匹配一个模式的时候才会成功  
+如果一个测试是由多个请求组成，response_headers_like **必须** 是一个数组 且 数组的每一个元素对相应的请求的响应都会被检查，
 
+#### raw_response_headers_like
+在这个模式中检查响应中的头部的部分。这个特别有用当你想要去写一个测试或者写一个没有绑定你的 nginx server 端口的值的重定向方法的测试  
+```
+--- raw_response_headers_like: Location: http://localhost(?::\d+)?/foo\r\n
+```
+通常来说，如果一个测试是由多个 request 组成，那么 raw_response_headers_like 必须是一个数组
+
+#### raw_response_headers_unlike
+就像 raw_response_headers_like 一样，但是子测试只有当正则不匹配 raw response headers 字符串的时候才会通过
+
+#### error_code
+HTTP response code 的期望值。如果没有被设置，默认是200。但你也可以期望一个其它的值  
+```
+--- error_code: 302
+```
+如果这个测试是由多个请求组成，那么 error_code_like 必须是一个在这个测试中有期望值的状态码数组  
+
+### timeout
+指定一个超时值（秒级别）对于 HTTP 客户端嵌入到测试框架。服务端的配置不需要做任何事，当超时时间到期时，测试框架将会立即关闭连接到 nginx server 的 socket  
+注意，就像大多数在 nginx 世界中超时设置一样，这个超时会指定最大的等待时间在两个成功 I/O 事件中  
+当超时设置到期时，一个测试是被将会触发带有 ERROR: client socket timed out - TEST NAME 这个信息，除非在同一个时间指定 --- abort  
+下面是一个例子
+```
+=== TEST 1: test timeout
+--- location
+    location = /t {
+        echo_sleep 1;
+        echo ok;
+    }
+--- request
+    GET /t
+--- response_body
+ok
+--- timeout: 1.5
+```
+一个可选的单位被指定
+```
+--- timeout: 50ms
+```
+接受时间单元秒和毫秒。如果没有时间单位被指定，那么默认就是秒  
+默认是3秒  
+
+#### error_log_file
+指定一个全局 error log file 给当前测试块  
+现在，它不会影响 --- error_log 字段
+
+#### error_log
+检查是否模式或者多个模式全部出现在 error.log 文件里面  
+```
+=== TEST 1: matched with j
+--- config
+    location /re {
+        content_by_lua '
+            m = ngx.re.match("hello, 1234", "([0-9]+)", "j")
+            if m then
+                ngx.say(m[0])
+            else
+                ngx.say("not matched!")
+            end
+        ';
+    }
+--- request
+    GET /re
+--- response_body
+1234
+--- error_log: pcre JIT compiling result: 1
+```
+"pcre JIT compiling result: 1" 必须是在 error.log 的某一行里面  
+多个模式被支持  
+```
+--- error_log eval
+["abc", qr/blah/]
+```
+这个 abc 字符串必须在 error.log 上，而且正则 blah 必须匹配 error.log 的一行  
+默认地，只有 error logs 的一部分对应于当前的请求被检查。你能检查累加的 error logs 通过调用 check_accum_error_log perl 函数在调用 `__DATA__` 行前面的 run_tests 之前  
+
+#### abort
+使测试框架忽略 --- timeout 到期失败情况
+
+#### shutdown
+在客户端连接到 nginx 上的 socket 执行 shutdown() 操作，这个字段给一个整数到 shutdown 函数  
+```
+--- shutdown: 1
+```
+将会使连接停止发送数据
+
+#### no_error_log
+很像 --- error_log，但是刚好相反
+```
+--- no_error_log
+[error]
+```
+这个测试将会失败当在 error.log 文件包含字符串 "[error]"  
+就像 --- error_log 一样，也能被指定多个模式  
+```
+--- no_error_log eval
+["abc", qr/blah/]
+```
+如果任何的行包含字符串 abc 后者匹配 qr/blah/ 那么测试将会失败
+
+#### grep_error_log
+这个字段指定了对于过滤 nginx error logs 的 Perl 正则模式  
+你能指定一个匹配的信息
+```
+--- grep_error_log chop
+some thing we want to see
+```
+或者指定一个 Perl 正则对象对于 error log 行里
+```
+--- grep_error_log eval
+qr/something should be: \d+/
+```
+
+#### grep_error_log_out
+这个字段包含过滤操作期望的输出 对于通过指定 --- grep_error_log 字段过滤操作  
+如果过滤输出变量在重复请求（指定 repeat_each 函数），你可以指定 perl 数组  
+```
+--- grep_error_log_out eval
+["output for req 0", "output for req 1"]
+```
+#### log_level
+覆盖默认的 error log 级别给当前的测试块
+```
+--- log_level: debug
+```
+默认错误码级别能被指定在 Perl 代码中调用 log_level() 函数
+```
+use Test::Nginx::Socket;
+
+repeat_each(2);
+plan tests => repeat_each() * (3 * blocks());
+
+log_level('warn');
+
+run_tests();
+
+__DATA__
+...
+```
+
+#### raw_request
+精确的请求发送到 nginx。这是很有用的当你想要测试一些行为，这些行为是不可获得的请求例如 Content-Length header 或者在 hearders 中间分包  
+```
+--- raw_request eval
+["POST /rrd/taratata HTTP/1.1\r
+Host: localhost\r
+Connection: close\r
+Content-Type: application/",
+"x-www-form-urlencoded\r
+Content-Length:15\r\n\r\nvalue=N%3A12345"]
+```
+这对于测试无效请求行也是很有用的
+```
+--- raw_request
+GET /foo HTTP/2.0 THE_FUTURE_IS_NOW
+```
 
 
 =============================================
