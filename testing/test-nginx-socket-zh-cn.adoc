@@ -691,8 +691,27 @@ Content-Length:15\r\n\r\nvalue=N%3A12345"]
 GET /foo HTTP/2.0 THE_FUTURE_IS_NOW
 ```
 
+#### http09
+指定 HTTP 0.9 协议，这会影响 Test::Nginx::Socket 解析响应  
+下面是从 ngx_headers_more 模块测试套件的例子  
+```
+=== TEST 38: HTTP 0.9 (set)
+--- config
+    location /foo {
+        more_set_input_headers 'X-Foo: howdy';
+        echo "x-foo: $http_x_foo";
+    }
+--- raw_request eval
+"GET /foo\r\n"
+--- response_headers
+! X-Foo
+--- response_body
+x-foo:
+--- http09
+```
 
-=============================================
+#### ignore_response
+不要企图解析响应或者运行响应相关的子测试
 
 #### user_files
 这个部分你会创建一个文件，在下面的测试中它会被复制到 nginx server 的 html 目录下。
@@ -792,3 +811,70 @@ Hello, world
 `<subtest-count>` 这个必须是正整数
 
 当你用 --directives 运行测试用例时，`<reason>` 会被记录在日志上
+
+#### stap
+这个字段会被用来指定欧诺个户的 systemtap 脚本文件（.stp file）
+```
+=== TEST 1: stap sample
+--- config
+    location /t { echo hello; }
+--- stap
+probe process("nginx").function("ngx_http_finalize_request")
+{
+    printf("finalize %s?%s\n", ngx_http_req_uri($r),
+           ngx_http_req_args($r))
+}
+--- stap_out
+finalize /test?a=3&b=4
+--- request
+GET /test?a=3&b=4
+--- response_body
+hello
+```
+有一些宏能被使用在 "--- stap" 字段里，这些宏会被测试套件自动地扩展
+
+#### F(function_name)
+这个扩展 probe process("nginx").function("function_name")
+```
+=== TEST 1: stap sample
+--- config
+    location /t { echo hello; }
+--- stap
+F(ngx_http_finalize_request)
+{
+    printf("finalize %s?%s\n", ngx_http_req_uri($r),
+           ngx_http_req_args($r))
+}
+--- stap_out
+finalize /test?a=3&b=4
+--- request
+GET /test?a=3&b=4
+--- response_body
+hello
+```
+
+#### T()
+这个宏辉扩展 probe process("nginx").mark("static-probe-name")  
+例如
+```
+M(http-subrequest-start)
+{
+    ...
+}
+```
+将会被扩展成  
+```
+probe process("nginx").mark("http-subrequest-start")
+{
+    ...
+}
+```
+
+#### stap_out
+这个字段将会指定期望的 通过stap 指定的 systemtap 脚本文字层面上的输出  
+
+#### stap_out_like
+和 stap_out 一样，只不过是指定 Perl 模式
+
+#### stap_out_unlike
+和 stap_like 一样，但是只有当指定的模式不被匹配的时候才会通过  
