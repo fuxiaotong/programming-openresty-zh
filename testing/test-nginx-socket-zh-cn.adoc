@@ -552,7 +552,7 @@ HTTP response code 的期望值。如果没有被设置，默认是200。但你�
 如果这个测试是由多个请求组成，那么 error_code_like 必须是一个在这个测试中有期望值的状态码数组  
 
 ### timeout
-指定一个超时值（秒级别）对于 HTTP 客户端嵌入到测试框架。服务端的配置不需要做任何事，当超时时间到期时，测试框架将会立即关闭连接到 nginx server 的 socket  
+指定一个超时值（秒级别）对于 HTTP 客户端嵌入到测试模板。服务端的配置不需要做任何事，当超时时间到期时，测试模板将会立即关闭连接到 nginx server 的 socket  
 注意，就像大多数在 nginx 世界中超时设置一样，这个超时会指定最大的等待时间在两个成功 I/O 事件中  
 当超时设置到期时，一个测试是被将会触发带有 ERROR: client socket timed out - TEST NAME 这个信息，除非在同一个时间指定 --- abort  
 下面是一个例子
@@ -611,7 +611,7 @@ ok
 默认地，只有 error logs 的一部分对应于当前的请求被检查。你能检查累加的 error logs 通过调用 check_accum_error_log perl 函数在调用 `__DATA__` 行前面的 run_tests 之前  
 
 #### abort
-使测试框架忽略 --- timeout 到期失败情况
+使测试模板忽略 --- timeout 到期失败情况
 
 #### shutdown
 在客户端连接到 nginx 上的 socket 执行 shutdown() 操作，这个字段给一个整数到 shutdown 函数  
