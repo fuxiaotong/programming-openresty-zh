@@ -1,5 +1,5 @@
 ## 名称
-Test::Nginx::Socket - Socket-backed 是一个为 Nginx C 模块和 Nginx/OpenResty-based 库和应用的测试框架
+Test::Nginx::Socket - Socket-backed 是一个为 Nginx C 模块和 Nginx/OpenResty-based 库和应用的测试模板
 
 ## 说明
 ```
@@ -88,7 +88,7 @@ PATH=/path/to/your/nginx-with-memc-module:$PATH prove -r t
 当出现错误的时候，你有经常查看 t/servroot/logs/error.log 这个文件：）
 
 ## 用户指南
-你能找到一个在这个测试框架下全面的用户指南在我的即将出版的书 “Programming OpenResty”
+你能找到一个在这个测试模板下全面的用户指南在我的即将出版的书 “Programming OpenResty”
 https://openresty.gitbooks.io/programming-openresty/content/testing/index.html
 特性继承自 Test::Base
 Test::Base 里的所有特性都被继承由于它是这个模块的祖先类
@@ -97,7 +97,7 @@ Test::Base 里的所有特性都被继承由于它是这个模块的祖先类
 ## Meta sections
 
 ####  --- ONLY
-只运行这附近的测试块，在提交你的变化之前，你需要记住移除掉 --- ONLY。不用担心，当你留下 --- ONLY 在一些测试文件中的时候，这个测试框架会在控制台上提醒你
+只运行这附近的测试块，在提交你的变化之前，你需要记住移除掉 --- ONLY。不用担心，当你留下 --- ONLY 在一些测试文件中的时候，这个测试模板会在控制台上提醒你
 
 对于开发工作流这也是非常直观，不需要指定一个特定的测试名称在命令行上，只要在编辑器上找到测试块，插入 --- ONLY ，然后立即运行当前的测试文件，如果是vim 用户，可以使用 :!prove % ，叹号表示要执行指令， %表示 vim 当前编辑的 buffer
 这无疑是最有用和最频繁使用的特性
@@ -129,10 +129,10 @@ Hello world!
 下面这些 Perl 函数被默认导出
 
 #### run_tests
-这是测试框架的主要入口，在 __DATA__ 前面调用Perl函数使所有的测试运行，其他配置 Perl 函数必须在 run_tests 函数之前调用
+这是测试模板的主要入口，在 __DATA__ 前面调用Perl函数使所有的测试运行，其他配置 Perl 函数必须在 run_tests 函数之前调用
 
 #### no_shuffle
-默认地，这个测试框架总是自动地打乱测试块的顺序，如果在 run_tests 之前调用它 no_shuffle，那么将会禁止打乱顺序
+默认地，这个测试模板总是自动地打乱测试块的顺序，如果在 run_tests 之前调用它 no_shuffle，那么将会禁止打乱顺序
 
 #### no_long_string
 默认地，失败的字符串匹配测试将会使用 Test::LongString 模块产生一个错误信息，在 run_tests 之前调用这个函数将会关闭它
@@ -149,7 +149,7 @@ run_tests();
 默认64
 
 #### repeat_each
-在 run_test 之前调用这个函数带上一个整形的参数去告诉测试框架去运行指定的重复的请求次数给每一个测试块，当你调用时候没有参数，返回当前设置的值，默认1
+在 run_test 之前调用这个函数带上一个整形的参数去告诉测试模板去运行指定的重复的请求次数给每一个测试块，当你调用时候没有参数，返回当前设置的值，默认1
 
 #### env_to_nginx
 指定另外的系统环境变量到 nginx 服务器
@@ -158,7 +158,7 @@ run_tests();
 env_to_nginx("foo", "bar=123", "baz=hello world");
 run_tests();
 ```
-将会下面的行被插入到由测试框架产生的 nginx.conf 文件
+将会下面的行被插入到由测试模板产生的 nginx.conf 文件
 ```
 env foo;
 env bar=123;
@@ -210,7 +210,7 @@ workers(2);
 - 用 `--- error_log` 和 `--- no_error_log`  检查积累错误日志通过被 repeat_each 所控制的重复的请求
 
 #### no_root_location
-- 默认地，Nginx 配置文件会被产生通过测试框架自动地生成一个 `location /`。在调用 run_tests() 之前调用这个函数会禁止这个行为
+- 默认地，Nginx 配置文件会被产生通过测试模板自动地生成一个 `location /`。在调用 run_tests() 之前调用这个函数会禁止这个行为
 这样的话测试块能拥有他们自己的 root locations.
 
 #### bail_out
@@ -448,7 +448,7 @@ X-Foo: blah
 这将会增加 X-Foo: blah 到请求
 
 #### curl
-当这个 section 被指定的时候，测试框架会尝试给这个测试请求产生一个 `curl` 命令行
+当这个 section 被指定的时候，测试模板会尝试给这个测试请求产生一个 `curl` 命令行
 
 例如
 ```
